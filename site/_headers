@@ -1,0 +1,20 @@
+# Cloudflare serves these headers for the deployed listing.
+
+/index.json
+  Content-Type: application/json; charset=utf-8
+  # VCC and ALCOM refetch on demand; five minutes keeps a fresh release visible
+  # quickly without hammering the origin during a package browse.
+  Cache-Control: public, max-age=300, must-revalidate
+  # Lets web catalogues (vpm-catalog and friends) read the listing from a browser.
+  Access-Control-Allow-Origin: *
+
+/site.json
+  Content-Type: application/json; charset=utf-8
+  Cache-Control: public, max-age=300, must-revalidate
+  # heavenvr.tech/vpm reads this server-side, but keep it browser-readable too.
+  Access-Control-Allow-Origin: *
+
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Strict-Transport-Security: max-age=31536000; includeSubDomains

@@ -1,0 +1,6 @@
+# Build output of the listing generator
+/dist/
+
+# Go build artifacts
+/tools/vpmbuild/vpmbuild
+/tools/vpmbuild/vpmbuild.exe

@@ -1,0 +1,45 @@
+name: Publish listing
+
+# The listing is rebuilt from scratch from published releases every time, so any
+# release event -- and any change to how the listing is generated -- republishes.
+on:
+  release:
+    types: [published, edited, deleted, released]
+  push:
+    branches: [master]
+    paths:
+      - listing.json
+      - site/**
+      - tools/**
+      - .github/workflows/publish-listing.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish-listing
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: tools/vpmbuild/go.mod
+          cache-dependency-path: tools/vpmbuild/go.sum
+
+      - name: Build listing
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: go run ./tools/vpmbuild listing -out dist
+
+      - name: Deploy to Cloudflare
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: deploy

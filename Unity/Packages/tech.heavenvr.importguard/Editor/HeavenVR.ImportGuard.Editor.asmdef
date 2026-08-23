@@ -1,0 +1,10 @@
+{
+    "autoReferenced": true,
+    "includePlatforms": [
+        "Editor"
+    ],
+    "name": "HeavenVR.ImportGuard.Editor",
+    "noEngineReferences": false,
+    "references": [],
+    "rootNamespace": "HeavenVR.ImportGuard"
+}

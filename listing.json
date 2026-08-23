@@ -1,0 +1,13 @@
+{
+  "name": "HeavenVR",
+  "id": "tech.heavenvr.vpm",
+  "url": "https://vpm.heavenvr.tech/index.json",
+  "author": "HeavenVR",
+  "authorUrl": "https://heavenvr.tech",
+  "description": "VRChat packages by HeavenVR.",
+  "siteUrl": "https://vpm.heavenvr.tech",
+  "githubRepo": "hhvrc/vpm-packages",
+  "packagesDir": "Unity/Packages",
+  "packagePrefix": "tech.heavenvr.",
+  "namespace": "HeavenVR"
+}

@@ -1,0 +1,54 @@
+name: Release package
+
+# Publishing is manual and per-package: this is a monorepo, so a push to master
+# should never imply "ship everything".
+on:
+  workflow_dispatch:
+    inputs:
+      package:
+        description: 'Package id, e.g. tech.heavenvr.importguard'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: tools/vpmbuild/go.mod
+
+      - name: Validate packages
+        run: go run ./tools/vpmbuild validate
+
+      - name: Pack
+        id: pack
+        run: |
+          go run ./tools/vpmbuild pack "${{ inputs.package }}" -out dist
+          echo "tag=$(go run ./tools/vpmbuild tag "${{ inputs.package }}")" >> "$GITHUB_OUTPUT"
+
+      # A tag that already exists means this version was published before.
+      # Re-releasing it would hand users a different zip under a version they
+      # have already locked, so stop instead.
+      - name: Refuse to republish a version
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "${{ steps.pack.outputs.tag }}" >/dev/null 2>&1; then
+            echo "::error::${{ steps.pack.outputs.tag }} already exists. Bump the version in package.json."
+            exit 1
+          fi
+
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${{ steps.pack.outputs.tag }}" \
+            --title "${{ steps.pack.outputs.tag }}" \
+            --notes "Install via the HeavenVR VPM listing: https://vpm.heavenvr.tech" \
+            dist/*.zip dist/package.json

@@ -1,0 +1,26 @@
+{
+	"$schema": "https://json.schemastore.org/wrangler.json",
+	"name": "heavenvr-vpm",
+	"compatibility_date": "2026-07-24",
+
+	// No "main": this is an assets-only Worker. Every request is a static file
+	// read, which is all a VPM listing ever needs.
+	"assets": {
+		"directory": "dist",
+		"html_handling": "auto-trailing-slash",
+		"not_found_handling": "404-page"
+	},
+
+	// vpm.heavenvr.tech must exist as a DNS record in the same Cloudflare zone;
+	// Wrangler creates the custom domain binding on first deploy.
+	"routes": [
+		{
+			"pattern": "vpm.heavenvr.tech",
+			"custom_domain": true
+		}
+	],
+
+	"observability": {
+		"enabled": true
+	}
+}

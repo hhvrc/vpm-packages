@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements">
+    <Style src="UpkgWindow.uss" />
+
+    <ui:VisualElement name="root" class="root">
+
+        <ui:VisualElement name="titlebar" class="titlebar">
+            <ui:VisualElement name="risk-accent" class="titlebar__accent" />
+            <ui:VisualElement>
+                <ui:Label text="Package Import Guard" class="title" />
+                <ui:Label name="subtitle" class="subtitle"
+                          text="See what a package will change in your project, and decide before anything is added." />
+            </ui:VisualElement>
+            <ui:VisualElement class="grow" />
+            <ui:Label name="risk-pill" class="pill" text="Nothing checked yet" />
+        </ui:VisualElement>
+
+        <uie:Toolbar name="toolbar">
+            <uie:ToolbarButton name="open" text="Choose Package..." />
+            <uie:ToolbarButton name="rescan" text="Check Again" />
+            <ui:Label name="package-name" text="No package chosen" class="muted" />
+            <ui:VisualElement class="grow" />
+            <ui:Label name="status" class="muted" />
+        </uie:Toolbar>
+
+        <ui:VisualElement name="empty-state" class="report">
+            <ui:VisualElement class="card">
+                <ui:VisualElement class="card__head">
+                    <ui:VisualElement class="dot" />
+                    <ui:Label text="Choose a package to begin" class="card__title" />
+                </ui:VisualElement>
+                <ui:Label class="card__body"
+                          text="Unity only warns you when a package would overwrite a file. It stays silent when a package claims the identity of something you already have, which is how files quietly start pointing at the wrong thing." />
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+        <ui:ScrollView name="report" class="report">
+
+            <ui:VisualElement name="summary" class="card">
+                <ui:VisualElement class="card__head">
+                    <ui:VisualElement name="summary-dot" class="dot" />
+                    <ui:Label name="summary-title" class="card__title" text="Your existing files" />
+                </ui:VisualElement>
+                <ui:Label name="summary-banner" class="card__body" />
+                <ui:VisualElement name="chips" class="chips" />
+                <ui:Foldout name="blast-foldout" text="Which of your files" value="false">
+                    <ui:VisualElement name="blast-list" />
+                </ui:Foldout>
+            </ui:VisualElement>
+
+            <ui:VisualElement name="code" class="card card--danger">
+                <ui:VisualElement class="card__head">
+                    <ui:VisualElement class="dot dot--danger" />
+                    <ui:Label name="code-title" class="card__title" text="This package contains scripts" />
+                </ui:VisualElement>
+                <ui:Label name="code-banner" class="card__body" />
+
+                <ui:VisualElement name="unreadable" class="subcard">
+                    <ui:Label class="card__body bad"
+                              text="Part of this package is in a form nobody can read. There is no way to tell what it does before it runs, so adding it means trusting whoever made this package." />
+                    <ui:VisualElement name="binaries" />
+                </ui:VisualElement>
+
+                <ui:Label name="abilities-title" text="THESE SCRIPTS ARE ABLE TO" class="section" />
+                <ui:VisualElement name="abilities" />
+
+                <ui:Foldout name="domains-foldout" text="Internet addresses found in these scripts" value="false">
+                    <ui:VisualElement name="domains" />
+                </ui:Foldout>
+
+                <ui:VisualElement name="binaries-block" class="consent">
+                    <ui:Toggle name="trust" label="" text="I trust whoever made this package" />
+                </ui:VisualElement>
+
+                <ui:VisualElement class="consent row">
+                    <ui:Toggle name="allow-code" label="" class="grow"
+                               text="Also add the scripts in this package" />
+                    <ui:Label name="code-blocked" class="pill pill--danger"
+                              text="Confirm you trust the maker first" />
+                </ui:VisualElement>
+
+                <ui:Foldout name="per-file" text="Show me the individual scripts" value="false">
+                    <ui:VisualElement name="per-file-list" />
+                </ui:Foldout>
+            </ui:VisualElement>
+
+            <ui:VisualElement name="dangling" class="card card--caution">
+                <ui:VisualElement class="card__head">
+                    <ui:VisualElement class="dot dot--caution" />
+                    <ui:Label class="card__title" text="Something left out is still needed" />
+                </ui:VisualElement>
+                <ui:Label name="dangling-banner" class="card__body" />
+                <ui:VisualElement name="dangling-list" />
+            </ui:VisualElement>
+
+        </ui:ScrollView>
+
+        <ui:VisualElement name="filters" class="row filters">
+            <ui:Toggle name="conflicts-only" label="" text="Only show problems" value="true" />
+            <uie:ToolbarSearchField name="search" class="grow" />
+            <ui:Button name="expand-all" text="Expand all" class="quiet" />
+            <ui:Button name="collapse-all" text="Collapse" class="quiet" />
+        </ui:VisualElement>
+
+        <!-- The TreeView is created in code and parented here, so the window still
+             builds on any Unity version whose UXML schema lacks the control. -->
+        <ui:VisualElement name="tree-host" class="tree-host" />
+
+        <ui:VisualElement name="footer" class="footer">
+            <ui:Label name="plan-summary" class="muted" />
+            <ui:VisualElement class="footer__row">
+                <ui:Button name="import" text="Add to project" class="grow primary" />
+                <ui:Button name="export" text="Save as package..." class="secondary" />
+                <ui:Button name="unity-import" text="Use Unity's importer" class="quiet"
+                           tooltip="Hand this package to Unity's own window, with nothing checked." />
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+    </ui:VisualElement>
+</ui:UXML>

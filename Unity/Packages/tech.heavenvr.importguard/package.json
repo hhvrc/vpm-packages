@@ -1,0 +1,16 @@
+{
+  "name": "tech.heavenvr.importguard",
+  "displayName": "ImportGuard",
+  "version": "0.1.0",
+  "unity": "2022.3",
+  "description": "Inspect a .unitypackage against your project before importing it, and import with colliding GUIDs remapped.",
+  "license": "GPL-3.0-or-later",
+  "author": {
+    "name": "HeavenVR",
+    "url": "https://heavenvr.tech"
+  },
+  "changelogUrl": "https://github.com/hhvrc/vpm-packages/blob/master/Unity/Packages/tech.heavenvr.importguard/CHANGELOG.md",
+  "legacyFolders": {
+    "Assets/HeavenVR/Editor/PackageGuard": "d78e59800f24aae4cb19486c50b47248"
+  }
+}

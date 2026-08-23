@@ -1,0 +1,4 @@
+# vpm.heavenvr.tech is the machine surface: listings and downloads only.
+# Anyone who lands on it in a browser wants the package pages, which live in
+# the SvelteKit app. /index.json and /u/* are untouched.
+/  https://heavenvr.tech/vpm  302

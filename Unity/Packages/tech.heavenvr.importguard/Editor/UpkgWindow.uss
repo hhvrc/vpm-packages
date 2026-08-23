@@ -1,0 +1,324 @@
+/* Package Import Guard.
+
+   A small design system rather than ad-hoc rules:
+     - one spacing rhythm (4 / 8 / 12)
+     - three states (danger, caution, calm) used consistently for colour
+     - cards carry meaning through a coloured edge and a dot, not through
+       walls of text
+   Colours are literal rather than theme variables where the meaning is
+   semantic: a danger red has to stay red in every skin. */
+
+:root {
+    --pg-danger: rgb(232, 96, 82);
+    --pg-danger-dim: rgba(232, 96, 82, 0.14);
+    --pg-caution: rgb(226, 173, 61);
+    --pg-caution-dim: rgba(226, 173, 61, 0.14);
+    --pg-calm: rgb(108, 187, 128);
+    --pg-calm-dim: rgba(108, 187, 128, 0.14);
+    --pg-info: rgb(96, 156, 220);
+
+    --pg-surface: rgba(255, 255, 255, 0.035);
+    --pg-surface-strong: rgba(255, 255, 255, 0.06);
+    --pg-border: rgba(255, 255, 255, 0.09);
+    --pg-text-dim: rgba(255, 255, 255, 0.55);
+}
+
+.root {
+    flex-grow: 1;
+}
+
+/* Layout priority: title, findings and footer keep their space; the file list
+   is what gives way. min-height:0 is what allows that - a flex child defaults
+   to min-height:auto, refuses to shrink past its content, and pushes the
+   footer off the bottom of the window. */
+
+#toolbar,
+.titlebar,
+.filters,
+.footer {
+    flex-shrink: 0;
+}
+
+.report {
+    flex-shrink: 0;
+    flex-grow: 0;
+    max-height: 62%;
+    min-height: 0;
+    padding: 8px 10px 2px 10px;
+}
+
+.tree-host {
+    flex-grow: 1;
+    flex-shrink: 1;
+    min-height: 72px;
+}
+
+/* Primitives ----------------------------------------------------------- */
+
+.row { flex-direction: row; align-items: center; }
+.wrap-row { flex-wrap: wrap; }
+.grow { flex-grow: 1; }
+.wrap { white-space: normal; }
+.hidden { display: none; }
+
+.muted {
+    color: var(--pg-text-dim);
+}
+
+.bad { color: var(--pg-danger); }
+
+/* A coloured dot carries severity without a paragraph explaining it. */
+.dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 4px;
+    margin-right: 8px;
+    flex-shrink: 0;
+    background-color: var(--pg-info);
+}
+
+.dot--danger { background-color: var(--pg-danger); }
+.dot--caution { background-color: var(--pg-caution); }
+.dot--calm { background-color: var(--pg-calm); }
+
+.pill {
+    padding: 1px 8px 2px 8px;
+    border-radius: 9px;
+    font-size: 10px;
+    margin-left: 6px;
+    background-color: var(--pg-surface-strong);
+    color: var(--pg-text-dim);
+    flex-shrink: 0;
+}
+
+.pill--danger { background-color: var(--pg-danger-dim); color: var(--pg-danger); }
+.pill--caution { background-color: var(--pg-caution-dim); color: var(--pg-caution); }
+.pill--calm { background-color: var(--pg-calm-dim); color: var(--pg-calm); }
+
+/* Title ---------------------------------------------------------------- */
+
+.titlebar {
+    flex-direction: row;
+    align-items: center;
+    padding: 10px 12px;
+    background-color: var(--pg-surface);
+    border-bottom-width: 1px;
+    border-color: var(--pg-border);
+}
+
+.titlebar__accent {
+    width: 3px;
+    height: 30px;
+    border-radius: 2px;
+    margin-right: 10px;
+    background-color: var(--pg-info);
+}
+
+.titlebar__accent--danger { background-color: var(--pg-danger); }
+.titlebar__accent--caution { background-color: var(--pg-caution); }
+.titlebar__accent--calm { background-color: var(--pg-calm); }
+
+.title {
+    font-size: 14px;
+    -unity-font-style: bold;
+}
+
+.subtitle {
+    white-space: normal;
+    font-size: 11px;
+    color: var(--pg-text-dim);
+    margin-top: 1px;
+}
+
+/* Cards ---------------------------------------------------------------- */
+
+.card {
+    margin-bottom: 8px;
+    padding: 10px 12px 8px 12px;
+    border-radius: 5px;
+    border-left-width: 3px;
+    border-color: var(--pg-border);
+    border-left-color: var(--pg-info);
+    background-color: var(--pg-surface);
+}
+
+.card--danger { border-left-color: var(--pg-danger); }
+.card--caution { border-left-color: var(--pg-caution); }
+.card--calm { border-left-color: var(--pg-calm); }
+
+.card__head {
+    flex-direction: row;
+    align-items: center;
+    margin-bottom: 4px;
+}
+
+.card__title {
+    -unity-font-style: bold;
+    font-size: 12px;
+}
+
+.card__body {
+    white-space: normal;
+    color: rgba(255, 255, 255, 0.78);
+    margin-bottom: 2px;
+}
+
+/* An inset block for the "cannot be read" case: a card inside a card. */
+.subcard {
+    margin-top: 8px;
+    padding: 8px 10px;
+    border-radius: 4px;
+    background-color: var(--pg-danger-dim);
+}
+
+.section {
+    -unity-font-style: bold;
+    font-size: 10px;
+    color: var(--pg-text-dim);
+    margin-top: 10px;
+    margin-bottom: 3px;
+}
+
+/* Capability lines ----------------------------------------------------- */
+
+.ability {
+    flex-direction: row;
+    align-items: center;
+    padding: 3px 6px;
+    border-radius: 3px;
+    margin-bottom: 1px;
+}
+
+.ability:hover {
+    background-color: var(--pg-surface-strong);
+}
+
+.ability__text {
+    white-space: normal;
+    flex-grow: 1;
+}
+
+.ability--calm .ability__text { color: var(--pg-text-dim); }
+
+/* Addresses ------------------------------------------------------------ */
+
+.domain-foldout > #unity-content {
+    margin-left: 14px;
+}
+
+.url {
+    font-size: 10px;
+    color: var(--pg-text-dim);
+    padding: 1px 0;
+}
+
+.chips {
+    flex-direction: row;
+    flex-wrap: wrap;
+    margin-top: 6px;
+}
+
+.chip {
+    padding: 2px 9px 3px 9px;
+    border-radius: 9px;
+    font-size: 10px;
+    margin-right: 6px;
+    margin-bottom: 4px;
+    background-color: var(--pg-surface-strong);
+    color: var(--pg-text-dim);
+}
+
+.chip--bad {
+    background-color: var(--pg-danger-dim);
+    color: var(--pg-danger);
+}
+
+/* Filters, tree, footer ------------------------------------------------ */
+
+.filters {
+    padding: 4px 10px;
+    background-color: var(--pg-surface);
+    border-top-width: 1px;
+    border-bottom-width: 1px;
+    border-color: var(--pg-border);
+}
+
+.tree-row {
+    flex-direction: row;
+    align-items: center;
+    height: 20px;
+    padding-right: 6px;
+    border-radius: 3px;
+}
+
+.tree-row:hover {
+    background-color: var(--pg-surface-strong);
+}
+
+.tree-row--odd {
+    background-color: rgba(255, 255, 255, 0.02);
+}
+
+.tree-name {
+    flex-grow: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.tree-name--stolen { color: rgb(235, 150, 90); }
+.tree-name--off { color: var(--pg-text-dim); }
+.tree-name--folder { -unity-font-style: bold; }
+
+.footer {
+    padding: 8px 10px;
+    background-color: var(--pg-surface);
+    border-top-width: 1px;
+    border-color: var(--pg-border);
+}
+
+.footer__row {
+    flex-direction: row;
+    align-items: center;
+    margin-top: 6px;
+}
+
+.primary {
+    height: 26px;
+    -unity-font-style: bold;
+    border-radius: 4px;
+    background-color: rgba(96, 156, 220, 0.22);
+    border-color: rgba(96, 156, 220, 0.5);
+}
+
+.primary:hover { background-color: rgba(96, 156, 220, 0.34); }
+.primary:active { background-color: rgba(96, 156, 220, 0.45); }
+
+.secondary {
+    height: 26px;
+    border-radius: 4px;
+    margin-left: 6px;
+}
+
+.quiet {
+    height: 26px;
+    border-radius: 4px;
+    margin-left: 6px;
+    background-color: transparent;
+    border-color: var(--pg-border);
+    color: var(--pg-text-dim);
+}
+
+.quiet:hover { color: rgba(255, 255, 255, 0.85); }
+
+/* Consent toggles ------------------------------------------------------ */
+
+.consent {
+    margin-top: 8px;
+    padding: 7px 9px;
+    border-radius: 4px;
+    background-color: var(--pg-surface-strong);
+}
+
+.consent Label {
+    white-space: normal;
+}
