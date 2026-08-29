@@ -36,11 +36,3 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: go run ./tools/vpmbuild listing -out dist
-
-      - name: Deploy to Cloudflare
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          wranglerVersion: "4"
-          command: deploy
