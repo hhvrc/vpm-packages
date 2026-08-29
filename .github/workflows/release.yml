@@ -52,3 +52,13 @@ jobs:
             --title "${{ steps.pack.outputs.tag }}" \
             --notes "Install via the HeavenVR VPM listing: https://vpm.heavenvr.tech" \
             dist/*.zip dist/package.json
+
+      # `release` events created with the default GITHUB_TOKEN don't trigger other
+      # workflows, and Cloudflare Workers Builds only rebuilds on a git push -- so
+      # without this, the live listing never picks up what was just released.
+      - name: Trigger a listing rebuild
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git commit --allow-empty -m "chore: rebuild listing for ${{ steps.pack.outputs.tag }}"
+          git push
