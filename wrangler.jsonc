@@ -1,6 +1,6 @@
 {
 	"$schema": "https://json.schemastore.org/wrangler.json",
-	"name": "heavenvr-vpm",
+	"name": "vpm-packages",
 	"compatibility_date": "2026-07-24",
 
 	// No "main": this is an assets-only Worker. Every request is a static file
