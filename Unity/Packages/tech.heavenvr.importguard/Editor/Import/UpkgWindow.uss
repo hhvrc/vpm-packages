@@ -310,6 +310,13 @@
 
 .quiet:hover { color: rgba(255, 255, 255, 0.85); }
 
+.tiny {
+    height: 18px;
+    padding: 0 8px;
+    font-size: 10px;
+    margin-left: 4px;
+}
+
 /* Consent toggles ------------------------------------------------------ */
 
 .consent {

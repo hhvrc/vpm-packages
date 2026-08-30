@@ -21,12 +21,18 @@ namespace HeavenVR.ImportGuard
     /// </summary>
     public class UpkgWindow : EditorWindow
     {
-        [MenuItem("Tools/HeavenVR/ImportGuard")]
-        public static void Open()
+        /// <summary>
+        /// The only Tools > HeavenVR entry point - everything else is a standard
+        /// Unity import (double-click, drag-and-drop) that Import Guard intercepts
+        /// on its own. Picks a file first, exactly like Assets > Import Package >
+        /// Custom Package..., and only opens the review window if one was chosen -
+        /// there is no bare "open an empty window" menu item to navigate to.
+        /// </summary>
+        [MenuItem("Tools/HeavenVR/ImportGuard/Import Package...")]
+        public static void ImportPackageMenuItem()
         {
-            var window = GetWindow<UpkgWindow>("Import Guard");
-            window.minSize = new Vector2(760, 520);
-            window.Show();
+            var path = EditorUtility.OpenFilePanel("Select a .unitypackage", "", "unitypackage");
+            if (!string.IsNullOrEmpty(path)) OpenWith(path);
         }
 
         /// <summary>
@@ -56,7 +62,9 @@ namespace HeavenVR.ImportGuard
 
         // ---- state ---------------------------------------------------
 
-        string _packagePath = "";
+        string _packagePath = "";      // what's shown/reopened - may hide a protected payload
+        string _readPath = "";         // what everything else reads - gzip'd or raw, UpkgArchive.Read tells them apart
+        string _decryptedTempPath;     // cleaned up on the next Scan() and on window close
         List<UpkgRow> _rows;
         UpkgProject _project;
         UpkgReferences.Graph _refGraph;
@@ -137,15 +145,9 @@ namespace HeavenVR.ImportGuard
             _perFile = rootVisualElement.Q<Foldout>("per-file");
             _blastFoldout = rootVisualElement.Q<Foldout>("blast-foldout");
 
-            rootVisualElement.Q<ToolbarButton>("open").clicked += ChoosePackage;
-            rootVisualElement.Q<ToolbarButton>("rescan").clicked += () =>
-            {
-                if (!string.IsNullOrEmpty(_packagePath)) Scan(_packagePath);
-            };
             rootVisualElement.Q<Button>("expand-all").clicked += () => ExpandAll(true);
             rootVisualElement.Q<Button>("collapse-all").clicked += () => ExpandAll(false);
             rootVisualElement.Q<Button>("import").clicked += DoImport;
-            rootVisualElement.Q<Button>("export").clicked += DoExport;
             rootVisualElement.Q<Button>("unity-import").clicked += DoUnityImport;
 
             _conflictsToggle.RegisterValueChangedCallback(e =>
@@ -169,9 +171,46 @@ namespace HeavenVR.ImportGuard
             });
             _allowCodeToggle.RegisterValueChangedCallback(OnAllowCodeChanged);
 
+            rootVisualElement.RegisterCallback<DragUpdatedEvent>(OnDragUpdated);
+            rootVisualElement.RegisterCallback<DragPerformEvent>(OnDragPerform);
+
             BuildTreeView();
             ShowLoaded(false);
             ConsumeQueuedPackage();
+        }
+
+        void OnDisable()
+        {
+            DeleteDecryptedTemp();
+        }
+
+        // ---- drag and drop ---------------------------------------------
+
+        static bool IsAcceptablePackage(string path)
+        {
+            return path.EndsWith(".unitypackage", StringComparison.OrdinalIgnoreCase);
+        }
+
+        static string FirstAcceptableDraggedPath()
+        {
+            foreach (var path in DragAndDrop.paths)
+                if (IsAcceptablePackage(path)) return path;
+            return null;
+        }
+
+        void OnDragUpdated(DragUpdatedEvent evt)
+        {
+            DragAndDrop.visualMode = FirstAcceptableDraggedPath() != null
+                ? DragAndDropVisualMode.Copy
+                : DragAndDropVisualMode.Rejected;
+        }
+
+        void OnDragPerform(DragPerformEvent evt)
+        {
+            var path = FirstAcceptableDraggedPath();
+            if (path == null) return;
+            DragAndDrop.AcceptDrag();
+            Scan(path);
         }
 
         /// <summary>
@@ -213,15 +252,21 @@ namespace HeavenVR.ImportGuard
 
         // ---- loading -------------------------------------------------
 
-        void ChoosePackage()
+        /// <summary>The plaintext of a decrypted package only ever lives on disk in
+        /// the OS temp dir, and only until the next scan (or the window closes).</summary>
+        void DeleteDecryptedTemp()
         {
-            var path = EditorUtility.OpenFilePanel("Select a .unitypackage", "", "unitypackage");
-            if (!string.IsNullOrEmpty(path)) Scan(path);
+            if (string.IsNullOrEmpty(_decryptedTempPath)) return;
+            try { File.Delete(_decryptedTempPath); } catch { /* best-effort */ }
+            _decryptedTempPath = null;
         }
 
         void Scan(string path)
         {
+            DeleteDecryptedTemp();
+
             _packagePath = path;
+            _readPath = path;
             _refGraph = null;
             _dangling = null;
             _scripts = null;
@@ -231,10 +276,33 @@ namespace HeavenVR.ImportGuard
 
             try
             {
+                var hidden = UpkgTwoInOne.TryReadHidden(path);
+                if (hidden != null)
+                {
+                    var name = Path.GetFileName(path);
+                    byte typeId = UpkgCrypto.PeekAuthType(hidden);
+                    var method = UpkgCrypto.FindMethod(typeId);
+                    if (method == null)
+                        throw new UpkgCryptoException(
+                            "This package uses an authentication type this version of " +
+                            "Import Guard doesn't support. Update the package.");
+
+                    var credential = method.PromptForExistingCredential(name);
+                    if (credential == null)
+                    {
+                        _status.text = "cancelled";
+                        return;
+                    }
+
+                    _decryptedTempPath = UpkgCrypto.DecryptToTemp(hidden, credential,
+                        (phase, frac) => EditorUtility.DisplayProgressBar("Import Guard", phase, frac));
+                    _readPath = _decryptedTempPath;
+                }
+
                 EditorUtility.DisplayProgressBar("Import Guard", "Indexing project...", 0f);
                 _project = UpkgProject.Build();
 
-                var entries = UpkgAnalyzer.Scan(path, f =>
+                var entries = UpkgAnalyzer.Scan(_readPath, f =>
                     EditorUtility.DisplayProgressBar("Import Guard", "Reading package...", f));
 
                 _rows = UpkgAnalyzer.Analyze(entries, _project);
@@ -242,7 +310,7 @@ namespace HeavenVR.ImportGuard
 
                 // Code is read up front: you should not have to ask to find out
                 // that a package wants to run something.
-                _scripts = UpkgScriptAudit.Audit(path, _rows, f =>
+                _scripts = UpkgScriptAudit.Audit(_readPath, _rows, f =>
                 {
                     EditorUtility.DisplayProgressBar("Import Guard", "Reading code...", f);
                     return true;
@@ -262,6 +330,20 @@ namespace HeavenVR.ImportGuard
                 RefreshCodePanel();
                 RefreshDanglingPanel();
                 LogTechnicalReport();
+            }
+            catch (UpkgCryptoWrongCredentialException ex)
+            {
+                _rows = null;
+                _status.text = "wrong password";
+                ShowLoaded(false);
+                EditorUtility.DisplayDialog("Import Guard", ex.Message, "OK");
+            }
+            catch (UpkgCryptoException ex)
+            {
+                _rows = null;
+                _status.text = "failed";
+                ShowLoaded(false);
+                EditorUtility.DisplayDialog("Import Guard", ex.Message, "OK");
             }
             catch (Exception ex)
             {
@@ -931,7 +1013,7 @@ namespace HeavenVR.ImportGuard
             try
             {
                 var result = UpkgImporter.ImportIntoProject(
-                    _packagePath, _rows, _project,
+                    _readPath, _rows, _project,
                     (f, msg) =>
                     {
                         EditorUtility.DisplayProgressBar("Import Guard", msg, f);
@@ -961,34 +1043,18 @@ namespace HeavenVR.ImportGuard
                     "Use Unity's importer", "Cancel"))
                 return;
 
-            UpkgImportPatch.ImportWithUnity(_packagePath);
+            // Unity's dialog is asynchronous: ImportPackage(interactive: true) shows
+            // it and returns immediately, and the file is only actually read once
+            // the user clicks Import there - possibly well after this window (and
+            // its OnDisable cleanup) is gone. Handing off a decrypted temp file
+            // means abandoning cleanup of it rather than risk deleting it out from
+            // under Unity's own dialog; the OS temp dir is an acceptable place for
+            // it to sit until the next reboot.
+            UpkgImportPatch.ImportWithUnity(_readPath);
+            _decryptedTempPath = null;
             Close();
         }
 
-        void DoExport()
-        {
-            var output = EditorUtility.SaveFilePanel("Export rewritten package", "",
-                Path.GetFileNameWithoutExtension(_packagePath) + " [guarded]", "unitypackage");
-            if (string.IsNullOrEmpty(output)) return;
-
-            try
-            {
-                var result = UpkgImporter.ExportPackage(
-                    _packagePath, output, _rows, _project,
-                    (f, msg) =>
-                    {
-                        EditorUtility.DisplayProgressBar("Import Guard", msg, f);
-                        return true;
-                    });
-
-                _status.text = result.ToString();
-                Debug.Log("[Import Guard] wrote " + output + " - " + result);
-            }
-            finally
-            {
-                EditorUtility.ClearProgressBar();
-            }
-        }
     }
 
     /// <summary>Read-only viewer for one script's source.</summary>

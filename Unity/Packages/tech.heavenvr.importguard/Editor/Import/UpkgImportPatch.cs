@@ -59,8 +59,7 @@ namespace HeavenVR.ImportGuard
                 var target = FindShowImportPackage();
                 if (target == null)
                 {
-                    Unavailable = "UnityEditor.PackageImport.ShowImportPackage was not found " +
-                                  "on this Unity version";
+                    Unavailable = "UnityEditor.PackageImport.ShowImportPackage was not found on this Unity version";
                     return;
                 }
 
@@ -102,10 +101,7 @@ namespace HeavenVR.ImportGuard
             catch (Exception ex)
             {
                 Unavailable = ex.GetBaseException().Message;
-                Debug.LogWarning("[Import Guard] could not take over Unity's import dialog: " +
-                                 Unavailable + "\nDouble-clicking a package inside the Project " +
-                                 "window still opens Import Guard, and imports are still " +
-                                 "checked afterwards.");
+                Debug.LogWarning($"[Import Guard] could not take over Unity's import dialog: {Unavailable}\nDouble-clicking a package inside the Project window still opens Import Guard, and imports are still checked afterwards.");
             }
         }
 
@@ -163,8 +159,7 @@ namespace HeavenVR.ImportGuard
             catch (Exception ex)
             {
                 // Never leave the user unable to import anything.
-                Debug.LogError("[Import Guard] failed to take over this import, " +
-                               "handing it back to Unity: " + ex);
+                Debug.LogError($"[Import Guard] failed to take over this import, handing it back to Unity: {ex}");
                 return true;
             }
         }

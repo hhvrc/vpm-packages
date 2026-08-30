@@ -146,12 +146,9 @@ namespace HeavenVR.ImportGuard
             switch (verdict)
             {
                 case UpkgVerdict.GuidStolen:
-                    return "This guid already belongs to a different asset in your project. " +
-                           "Importing makes two files claim one guid and Unity will silently " +
-                           "re-point existing references. Unity shows no warning for this.";
+                    return "This guid already belongs to a different asset in your project. Importing makes two files claim one guid and Unity will silently re-point existing references. Unity shows no warning for this.";
                 case UpkgVerdict.PathHijack:
-                    return "An asset already lives at this path with a different guid. " +
-                           "The file is overwritten and every existing reference to it breaks.";
+                    return "An asset already lives at this path with a different guid. The file is overwritten and every existing reference to it breaks.";
                 case UpkgVerdict.Duplicate:
                     return "Two entries inside the package target this same path.";
                 case UpkgVerdict.Update:

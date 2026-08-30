@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <Style src="../Import/UpkgWindow.uss" />
+
+    <ui:VisualElement name="root" class="root">
+
+        <ui:VisualElement name="titlebar" class="titlebar">
+            <ui:VisualElement name="accent" class="titlebar__accent" />
+            <ui:VisualElement>
+                <ui:Label text="Export Protected Package" class="title" />
+                <ui:Label class="subtitle"
+                          text="Choose what goes in - folders include everything inside them - then protect and export it." />
+            </ui:VisualElement>
+            <ui:VisualElement class="grow" />
+            <ui:Label name="count-pill" class="pill" text="0 of 0" />
+        </ui:VisualElement>
+
+        <ui:VisualElement name="filters" class="filters row">
+            <ui:Button name="select-all" text="All" class="quiet tiny" />
+            <ui:Button name="select-none" text="None" class="quiet tiny" />
+        </ui:VisualElement>
+
+        <!-- The TreeView is created in code and parented here, same as UpkgWindow. -->
+        <ui:VisualElement name="tree-host" class="tree-host" />
+
+        <ui:VisualElement name="footer" class="footer">
+            <ui:VisualElement class="footer__row">
+                <ui:Toggle name="include-deps" text="Include Dependencies" />
+                <ui:VisualElement class="grow" />
+                <ui:Button name="export" text="Export..." class="primary" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+    </ui:VisualElement>
+</ui:UXML>

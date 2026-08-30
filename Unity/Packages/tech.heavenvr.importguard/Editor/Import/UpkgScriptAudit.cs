@@ -93,8 +93,7 @@ namespace HeavenVR.ImportGuard
             R("auto-run", Severity.High,
               @"\[\s*InitializeOnLoad(Method)?\s*\]|\[\s*DidReloadScripts",
               "runs automatically on import",
-              "This code executes as soon as Unity finishes compiling, before you " +
-              "open or click anything. Everything else this script does happens by itself."),
+              "This code executes as soon as Unity finishes compiling, before you open or click anything. Everything else this script does happens by itself."),
             R("auto-run-runtime", Severity.Medium,
               @"\[\s*RuntimeInitializeOnLoadMethod",
               "runs automatically when the game starts",
@@ -292,14 +291,14 @@ namespace HeavenVR.ImportGuard
             var labels = host.Split('.');
             if (labels.Length <= 2) return host;
 
-            var lastTwo = labels[labels.Length - 2] + "." + labels[labels.Length - 1];
+            var lastTwo = $"{labels[labels.Length - 2]}.{labels[labels.Length - 1]}";
             if (labels.Length >= 3)
             {
-                var lastThree = labels[labels.Length - 3] + "." + lastTwo;
+                var lastThree = $"{labels[labels.Length - 3]}.{lastTwo}";
                 if (MultiLabelSuffixes.Contains(lastThree)) return lastThree;
             }
             if (MultiLabelSuffixes.Contains(lastTwo) && labels.Length >= 3)
-                return labels[labels.Length - 3] + "." + lastTwo;
+                return $"{labels[labels.Length - 3]}.{lastTwo}";
 
             return lastTwo;
         }
@@ -463,8 +462,7 @@ namespace HeavenVR.ImportGuard
                 var text = moments[0];
                 for (int i = 1; i < moments.Count; i++)
                     text += (i == moments.Count - 1 ? ", and " : ", ") + moments[i];
-                return "These scripts start running by themselves " + text +
-                       ". You are not asked first.";
+                return $"These scripts start running by themselves {text}. You are not asked first.";
             }
         }
 

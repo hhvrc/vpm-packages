@@ -10,6 +10,9 @@
     "url": "https://heavenvr.tech"
   },
   "changelogUrl": "https://github.com/hhvrc/vpm-packages/blob/master/Unity/Packages/tech.heavenvr.importguard/CHANGELOG.md",
+  "dependencies": {
+    "com.unity.nuget.newtonsoft-json": "3.2.1"
+  },
   "legacyFolders": {
     "Assets/HeavenVR/Editor/PackageGuard": "d78e59800f24aae4cb19486c50b47248"
   }

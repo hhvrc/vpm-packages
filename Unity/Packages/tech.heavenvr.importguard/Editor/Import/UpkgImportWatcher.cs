@@ -116,7 +116,7 @@ namespace HeavenVR.ImportGuard
                 if (!after.TryGetValue(pair.Key, out nowAt)) continue;
                 if (string.Equals(nowAt, pair.Value, StringComparison.OrdinalIgnoreCase))
                     continue;
-                moved.Add(pair.Value + "\n        is now  " + nowAt);
+                moved.Add($"{pair.Value}\n        is now  {nowAt}");
             }
 
             // Code that arrived without anyone being asked about it. Membership goes
@@ -139,8 +139,7 @@ namespace HeavenVR.ImportGuard
             if (moved.Count > 0)
             {
                 report.Append("\n\n  ").Append(moved.Count)
-                      .Append(" of your assets had their guid taken over. Anything that "
-                            + "referenced them now points somewhere else:");
+                      .Append(" of your assets had their guid taken over. Anything that referenced them now points somewhere else:");
                 foreach (var line in moved.Take(15)) report.Append("\n    ").Append(line);
                 if (moved.Count > 15)
                     report.Append("\n    ... and ").Append(moved.Count - 15).Append(" more");
@@ -158,22 +157,13 @@ namespace HeavenVR.ImportGuard
             if (moved.Count > 0) Debug.LogError(report.ToString());
             else Debug.LogWarning(report.ToString());
 
+            var movedExtra = code.Count > 0 ? $" {code.Count} code file(s) were also imported." : "";
             var summary = moved.Count > 0
-                ? string.Format(
-                    "{0} of your existing assets just had their guid taken over by this " +
-                    "package. References to them now resolve somewhere else.{1}\n\n" +
-                    "Undo this with version control if you can - the details are in the " +
-                    "Console.\n\nNext time, double-click the package inside the Project " +
-                    "window, or use Tools > HeavenVR > Package Import Guard, to review it " +
-                    "before anything is written.",
-                    moved.Count,
-                    code.Count > 0 ? " " + code.Count + " code file(s) were also imported." : "")
-                : string.Format(
-                    "{0} code file(s) were imported and will compile. Unity does not ask " +
-                    "before running code that comes in with a package.\n\nThe list is in " +
-                    "the Console. Import Guard can show you what code does before it " +
-                    "lands - open a package with it rather than with Unity's importer.",
-                    code.Count);
+                ? $"{moved.Count} of your existing assets just had their guid taken over by this package. References to them now resolve somewhere else.{movedExtra}\n\n" +
+                  "Undo this with version control if you can - the details are in the Console.\n\n" +
+                  "Next time, double-click the package inside the Project window, or use Tools > HeavenVR > Package Import Guard, to review it before anything is written."
+                : $"{code.Count} code file(s) were imported and will compile. Unity does not ask before running code that comes in with a package.\n\n" +
+                  "The list is in the Console. Import Guard can show you what code does before it lands - open a package with it rather than with Unity's importer.";
 
             EditorUtility.DisplayDialog("Import Guard", summary, "OK");
         }

@@ -38,7 +38,7 @@ namespace HeavenVR.ImportGuard
                                 Func<long, long, bool> onProgress = null)
         {
             using (var file = File.OpenRead(path))
-            using (var gz = new GZipStream(file, CompressionMode.Decompress))
+            using (var stream = OpenPossiblyGzipped(file))
             {
                 var header = new byte[BlockSize];
                 long counter = 0;
@@ -46,7 +46,7 @@ namespace HeavenVR.ImportGuard
 
                 while (true)
                 {
-                    if (!ReadExactly(gz, header, BlockSize)) break;
+                    if (!ReadExactly(stream, header, BlockSize)) break;
                     if (IsAllZero(header)) break;               // end-of-archive marker
 
                     string name = ReadString(header, 0, 100);
@@ -56,9 +56,9 @@ namespace HeavenVR.ImportGuard
                     if (type == 'L' || type == 'K')
                     {
                         // GNU long name: the real name arrives as the next payload.
-                        var nameBytes = ReadPayload(gz, size);
+                        var nameBytes = ReadPayload(stream, size);
                         name = Encoding.UTF8.GetString(nameBytes).TrimEnd('\0');
-                        if (!ReadExactly(gz, header, BlockSize)) break;
+                        if (!ReadExactly(stream, header, BlockSize)) break;
                         size = ReadOctal(header, 124, 12);
                         type = (char)header[156];
                     }
@@ -67,9 +67,9 @@ namespace HeavenVR.ImportGuard
                     var member = Split(name, size);
 
                     if (isFile && member.Guid != null && want(member))
-                        onPayload(member, ReadPayload(gz, size));
+                        onPayload(member, ReadPayload(stream, size));
                     else
-                        SkipPayload(gz, size);
+                        SkipPayload(stream, size);
 
                     counter++;
                     if (onProgress != null && (counter & 0xFF) == 0 &&
@@ -77,6 +77,23 @@ namespace HeavenVR.ImportGuard
                         return;   // caller cancelled
                 }
             }
+        }
+
+        /// <summary>
+        /// Every .unitypackage a user hands us is gzip'd, but a raw tar written by
+        /// Writer.Raw (see UpkgTwoInOne - a decrypted hidden payload, reconstituted
+        /// on disk as a temp file for the rest of the tool to read) isn't, and
+        /// there is no reason to pay for wrapping it in a redundant gzip layer just
+        /// to unwrap it again immediately. Detected from the two-byte gzip magic
+        /// rather than a caller-supplied flag, so this stays a plain file-path API.
+        /// </summary>
+        static Stream OpenPossiblyGzipped(FileStream file)
+        {
+            var header = new byte[2];
+            int n = file.Read(header, 0, 2);
+            file.Position = 0;
+            bool isGzip = n == 2 && header[0] == 0x1F && header[1] == 0x8B;
+            return isGzip ? (Stream)new GZipStream(file, CompressionMode.Decompress) : file;
         }
 
         static Member Split(string name, long size)
@@ -99,27 +116,54 @@ namespace HeavenVR.ImportGuard
         public sealed class Writer : IDisposable
         {
             readonly FileStream _file;
-            readonly GZipStream _gz;
+            readonly Stream _sink;   // GZipStream over _file, or _file itself (Raw)
 
-            public Writer(string path)
+            public Writer(string path) : this(path, CompressionLevel.Optimal) { }
+
+            /// <summary>
+            /// <paramref name="level"/> matters when a member's payload is already
+            /// compressed or encrypted (see UpkgTwoInOne) - ciphertext looks like
+            /// noise to DEFLATE, so Optimal still walks the whole thing looking for
+            /// matches it will never find, for zero size benefit. Fastest skips that
+            /// for a member of any real size.
+            /// </summary>
+            public Writer(string path, CompressionLevel level)
             {
                 _file = File.Create(path);
-                _gz = new GZipStream(_file, CompressionLevel.Optimal);
+                _sink = new GZipStream(_file, level);
+            }
+
+            Writer(string path, bool raw)
+            {
+                _file = File.Create(path);
+                _sink = _file;
+            }
+
+            /// <summary>
+            /// A tar with no gzip wrapper at all - for a payload that is about to be
+            /// embedded inside another archive that will gzip everything itself
+            /// (see UpkgTwoInOne), where a second, nested compression pass would
+            /// only spend CPU for no size benefit (once partially encrypted, the
+            /// data is incompressible anyway - see UpkgCrypto).
+            /// </summary>
+            public static Writer Raw(string path)
+            {
+                return new Writer(path, raw: true);
             }
 
             public void Add(string guid, string name, byte[] data)
             {
-                WriteHeader(_gz, guid + "/" + name, data.Length);
-                _gz.Write(data, 0, data.Length);
+                WriteHeader(_sink, $"{guid}/{name}", data.Length);
+                _sink.Write(data, 0, data.Length);
                 int pad = (int)((BlockSize - (data.Length % BlockSize)) % BlockSize);
-                if (pad > 0) _gz.Write(new byte[pad], 0, pad);
+                if (pad > 0) _sink.Write(new byte[pad], 0, pad);
             }
 
             public void Dispose()
             {
-                _gz.Write(new byte[BlockSize * 2], 0, BlockSize * 2);  // end marker
-                _gz.Dispose();
-                _file.Dispose();
+                _sink.Write(new byte[BlockSize * 2], 0, BlockSize * 2);  // end marker
+                _sink.Dispose();
+                if (!ReferenceEquals(_sink, _file)) _file.Dispose();
             }
         }
 
@@ -128,7 +172,7 @@ namespace HeavenVR.ImportGuard
             var h = new byte[BlockSize];
             var nameBytes = Encoding.UTF8.GetBytes(name);
             if (nameBytes.Length > 100)
-                throw new IOException("tar entry name too long: " + name);
+                throw new IOException($"tar entry name too long: {name}");
             Array.Copy(nameBytes, h, nameBytes.Length);
 
             WriteOctal(h, 100, 8, 0x1A4);      // mode 0644
@@ -137,7 +181,7 @@ namespace HeavenVR.ImportGuard
             WriteOctal(h, 124, 12, size);
             WriteOctal(h, 136, 12, 0);         // mtime
             h[156] = (byte)'0';                // regular file
-            Encoding.ASCII.GetBytes("ustar\0" + "00").CopyTo(h, 257);
+            Encoding.ASCII.GetBytes("ustar\000").CopyTo(h, 257);
 
             for (int i = 148; i < 156; i++) h[i] = (byte)' ';   // checksum field blank
             long sum = 0;

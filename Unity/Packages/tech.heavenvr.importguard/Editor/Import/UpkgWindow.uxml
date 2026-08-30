@@ -16,8 +16,6 @@
         </ui:VisualElement>
 
         <uie:Toolbar name="toolbar">
-            <uie:ToolbarButton name="open" text="Choose Package..." />
-            <uie:ToolbarButton name="rescan" text="Check Again" />
             <ui:Label name="package-name" text="No package chosen" class="muted" />
             <ui:VisualElement class="grow" />
             <ui:Label name="status" class="muted" />
@@ -27,10 +25,12 @@
             <ui:VisualElement class="card">
                 <ui:VisualElement class="card__head">
                     <ui:VisualElement class="dot" />
-                    <ui:Label text="Choose a package to begin" class="card__title" />
+                    <ui:Label text="Drag a package in to begin" class="card__title" />
                 </ui:VisualElement>
                 <ui:Label class="card__body"
                           text="Unity only warns you when a package would overwrite a file. It stays silent when a package claims the identity of something you already have, which is how files quietly start pointing at the wrong thing." />
+                <ui:Label class="card__body muted"
+                          text="Drag a .unitypackage in here, or double-click one in the Project window. A password-protected one will ask before it shows you anything." />
             </ui:VisualElement>
         </ui:VisualElement>
 
@@ -110,7 +110,6 @@
             <ui:Label name="plan-summary" class="muted" />
             <ui:VisualElement class="footer__row">
                 <ui:Button name="import" text="Add to project" class="grow primary" />
-                <ui:Button name="export" text="Save as package..." class="secondary" />
                 <ui:Button name="unity-import" text="Use Unity's importer" class="quiet"
                            tooltip="Hand this package to Unity's own window, with nothing checked." />
             </ui:VisualElement>

@@ -49,7 +49,7 @@ namespace HeavenVR.ImportGuard
                 var soFar = "";
                 for (int i = 0; i < parts.Length; i++)
                 {
-                    soFar = i == 0 ? parts[0] : soFar + "/" + parts[i];
+                    soFar = i == 0 ? parts[0] : $"{soFar}/{parts[i]}";
                     bool leaf = i == parts.Length - 1;
 
                     // A folder entry in the package is still a folder in the tree; its
@@ -120,7 +120,7 @@ namespace HeavenVR.ImportGuard
                        child.Row == null && !child.Children[0].IsLeaf)
                 {
                     var only = child.Children[0];
-                    only.Name = child.Name + "/" + only.Name;
+                    only.Name = $"{child.Name}/{only.Name}";
                     node.Children[i] = only;
                     child = only;
                 }

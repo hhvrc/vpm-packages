@@ -27,10 +27,7 @@ namespace HeavenVR.ImportGuard
 
             public override string ToString()
             {
-                return string.Format(
-                    "{0} imported, {1} left out, {2} guids remapped, {3} redirected, " +
-                    "{4} references rewritten",
-                    Imported, Skipped, Remapped, Redirected, ReferencesPatched);
+                return $"{Imported} imported, {Skipped} left out, {Remapped} guids remapped, {Redirected} redirected, {ReferencesPatched} references rewritten";
             }
         }
 
@@ -81,7 +78,7 @@ namespace HeavenVR.ImportGuard
             // the .meta must still carry the guid the asset is landing with.
             var text = Encoding.GetEncoding(28591).GetString(patched);
             var replaced = System.Text.RegularExpressions.Regex.Replace(
-                text, "^guid:\\s*[0-9a-fA-F]{32}", "guid: " + newGuid,
+                text, "^guid:\\s*[0-9a-fA-F]{32}", $"guid: {newGuid}",
                 System.Text.RegularExpressions.RegexOptions.Multiline);
             return Encoding.GetEncoding(28591).GetBytes(replaced);
         }
@@ -155,7 +152,7 @@ namespace HeavenVR.ImportGuard
                                 {
                                     Directory.CreateDirectory(Path.GetDirectoryName(target));
                                 }
-                                File.WriteAllBytes(target + ".meta", meta);
+                                File.WriteAllBytes($"{target}.meta", meta);
                             }
                         }
                         catch (Exception ex)
@@ -179,75 +176,6 @@ namespace HeavenVR.ImportGuard
             }
 
             if (cancelled) result.Errors.Add("Cancelled - the project may be half-written.");
-            return result;
-        }
-
-        /// <summary>
-        /// Writes the decisions out as a new .unitypackage instead of importing,
-        /// so the result can be inspected, archived, or shared.
-        /// </summary>
-        public static Result ExportPackage(string packagePath, string outputPath,
-                                           List<UpkgRow> rows, UpkgProject project,
-                                           Func<float, string, bool> onProgress = null)
-        {
-            var result = new Result();
-            var map = BuildGuidMap(rows, project);
-
-            var byGuid = new Dictionary<string, UpkgRow>(StringComparer.Ordinal);
-            foreach (var r in rows)
-            {
-                byGuid[r.Entry.Guid] = r;
-                if (r.Action == UpkgAction.Skip)
-                {
-                    result.Skipped++;
-                    if (!string.IsNullOrEmpty(r.RedirectTo)) result.Redirected++;
-                }
-                else if (r.NewGuid != r.Entry.Guid) result.Remapped++;
-            }
-
-            using (var writer = new UpkgArchive.Writer(outputPath))
-            {
-                UpkgArchive.Read(packagePath,
-                    want: m =>
-                    {
-                        UpkgRow row;
-                        return byGuid.TryGetValue(m.Guid, out row) &&
-                               row.Action != UpkgAction.Skip;
-                    },
-                    onPayload: (m, data) =>
-                    {
-                        var row = byGuid[m.Guid];
-
-                        if (m.Name == "pathname")
-                        {
-                            var text = row.Entry.PathName;
-                            if (!string.IsNullOrEmpty(row.Entry.PathNameExtra))
-                                text += "\n" + row.Entry.PathNameExtra;
-                            data = Encoding.UTF8.GetBytes(text);
-                            result.Imported++;
-                        }
-                        else if (m.Name == "asset.meta")
-                        {
-                            int hits;
-                            data = PatchMeta(data, row.NewGuid, map, out hits);
-                            result.ReferencesPatched += hits;
-                        }
-                        else if (m.Name == "asset" && ShouldPatchPayload(row.Entry))
-                        {
-                            int hits;
-                            data = UpkgText.Substitute(data, map, out hits);
-                            result.ReferencesPatched += hits;
-                        }
-
-                        writer.Add(row.NewGuid, m.Name, data);
-                    },
-                    onProgress: (pos, total) =>
-                    {
-                        if (onProgress == null) return true;
-                        float f = total > 0 ? (float)pos / total : 0f;
-                        return onProgress(f, "Writing package...");
-                    });
-            }
             return result;
         }
     }

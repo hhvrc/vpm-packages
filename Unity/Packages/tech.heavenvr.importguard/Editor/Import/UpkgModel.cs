@@ -34,7 +34,7 @@ namespace HeavenVR.ImportGuard
             get
             {
                 var parts = PathName.Split('/');
-                return parts.Length > 1 ? parts[0] + "/" + parts[1] : PathName;
+                return parts.Length > 1 ? $"{parts[0]}/{parts[1]}" : PathName;
             }
         }
     }
@@ -165,8 +165,7 @@ namespace HeavenVR.ImportGuard
                 string candidate;
                 using (var md5 = System.Security.Cryptography.MD5.Create())
                 {
-                    var bytes = Encoding.UTF8.GetBytes(
-                        MintNamespace + "|" + sourceGuid + "|" + salt);
+                    var bytes = Encoding.UTF8.GetBytes($"{MintNamespace}|{sourceGuid}|{salt}");
                     var hash = md5.ComputeHash(bytes);
                     var sb = new StringBuilder(32);
                     foreach (var b in hash) sb.Append(b.ToString("x2"));

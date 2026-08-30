@@ -17,6 +17,14 @@ looks completely clean while existing references get silently re-pointed.
 - Flags GUID collisions and remaps them on import instead of overwriting
 - Audits scripts inside the package
 - Shows what each entry would land on, as a tree
+- Drag a `.unitypackage` straight into the window, or double-click one, or use
+  Choose Package
+- Export a password-protected `.unitypackage.enc`; opening one prompts for the
+  password before anything is read. This is a distribution gate, not DRM -
+  the ciphertext and the code that decrypts it both ship in the file, so it
+  only stops "double-click and it just opens," not a determined recipient.
+  Authentication is pluggable (see `IUpkgAuthMethod`); password is the only
+  method implemented today.
 
 ## License
 
